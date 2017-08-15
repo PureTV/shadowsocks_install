@@ -32,9 +32,11 @@ aes-128-cfb
 camellia-128-cfb
 camellia-192-cfb
 camellia-256-cfb
+xchacha20-ietf-poly1305
 chacha20-ietf-poly1305
 chacha20-ietf
 chacha20
+salsa20
 rc4-md5
 )
 # Color
@@ -194,6 +196,24 @@ centosversion(){
     fi
 }
 
+version_ge(){
+    test "$(echo "$@" | tr " " "\n" | sort -rV | head -n 1)" == "$1"
+}
+
+# autoconf version
+autoconfversion(){
+    if [ "$(command -v "autoconf")" ]; then
+        local version=$(autoconf --version | grep autoconf | awk '{print $4}')
+        if version_ge ${version} 2.67; then
+            return 0
+        else
+            return 1
+        fi
+    else
+        return 1
+    fi
+}
+
 # Pre-installation settings
 pre_install(){
     # Check OS system
@@ -294,8 +314,12 @@ pre_install(){
     echo "Press any key to start...or press Ctrl+C to cancel"
     char=`get_char`
     #Install necessary dependencies
-    yum install -y epel-release && yum makecache
-    yum install -y unzip openssl openssl-devel gettext gcc autoconf libtool automake make asciidoc xmlto udns-devel libev-devel pcre pcre-devel
+    echo -e "[${green}Info${plain}] Adding the EPEL repository..."
+    yum install -y epel-release yum-utils
+    [ ! -f /etc/yum.repos.d/epel.repo ] && echo -e "${red}Error${plain} Install EPEL repository failed, please check it." && exit 1
+    yum-config-manager --enable epel
+    echo -e "[${green}Info${plain}] Adding the EPEL repository complete..."
+    yum install -y unzip openssl openssl-devel gettext gcc autoconf libtool automake make asciidoc xmlto udns-devel libev-devel pcre pcre-devel git
 }
 
 download() {
